@@ -52,7 +52,7 @@ def handle_all_messages(message):
     if text == "Start Check":
         asyncio.run(check_groups(message))
     elif text == "Programmer":
-        bot.reply_to(message, "- Bot Programmer: [Sofi](t.me/DeityEmperor)", parse_mode="Markdown", disable_web_page_preview=True)
+        bot.reply_to(message, "- Bot Programmer: [Shion](t.me/DeityEmperor)", parse_mode="Markdown", disable_web_page_preview=True)
     elif text == "Programmer's Channel":
         bot.reply_to(message, "- Programmer's Channel: [Python Tools](t.me/Coding)", parse_mode="Markdown", disable_web_page_preview=True)
     elif text == "Bot Info":
@@ -137,7 +137,7 @@ async def check_groups(message):
 - Member Count: {members_count}
 - Creation Date: {formatted_date}
 - Group Link: {invite_link.link}
-- Bot Programmer: @M02MM
+- Bot Programmer: @deityEmperor
                         """, disable_web_page_preview=True)
         except Exception as e:
             print(e)
