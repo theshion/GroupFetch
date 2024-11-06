@@ -38,7 +38,7 @@ def start_message(message):
         "https://t.me/yyyyyy3w/31",
         caption="""
 Welcome to the bot for retrieving *your deleted groups*. Send commands now.
-Bot programmer: [Sofi](t.me/DeityEmperor)
+Bot programmer: [Shion](t.me/DeityEmperor)
         """,
         parse_mode="Markdown",
         reply_markup=create_buttons()
