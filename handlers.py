@@ -38,7 +38,7 @@ def start_message(message):
         "https://t.me/yyyyyy3w/31",
         caption="""
 Welcome to the bot for retrieving *your deleted groups*. Send commands now.
-Bot programmer: [Sofi](t.me/M02MM)
+Bot programmer: [Sofi](t.me/DeityEmperor)
         """,
         parse_mode="Markdown",
         reply_markup=create_buttons()
@@ -52,9 +52,9 @@ def handle_all_messages(message):
     if text == "Start Check":
         asyncio.run(check_groups(message))
     elif text == "Programmer":
-        bot.reply_to(message, "- Bot Programmer: [Sofi](t.me/M02MM)", parse_mode="Markdown", disable_web_page_preview=True)
+        bot.reply_to(message, "- Bot Programmer: [Sofi](t.me/DeityEmperor)", parse_mode="Markdown", disable_web_page_preview=True)
     elif text == "Programmer's Channel":
-        bot.reply_to(message, "- Programmer's Channel: [Python Tools](t.me/uiujq)", parse_mode="Markdown", disable_web_page_preview=True)
+        bot.reply_to(message, "- Programmer's Channel: [Python Tools](t.me/Coding)", parse_mode="Markdown", disable_web_page_preview=True)
     elif text == "Bot Info":
         bot.reply_to(message, "The bot is simple, no extra info needed. Enjoy!")
     elif text == "Add Session":
