@@ -119,13 +119,14 @@ async def check_groups(message):
         bot.reply_to(message, "No session added!")
         return 
 
-    async with client:  # Ensures client disconnects automatically
-        async for dialog in client.iter_dialogs(ignore_migrated=True):
-            try:
+    async with client:  # Ye client ko automatically disconnect karega
+        try:
+            async for dialog in client.iter_dialogs(ignore_migrated=True):
                 if dialog.is_group:
                     full_chat = await client.get_entity(dialog)
                     if hasattr(full_chat, 'admin_rights') and full_chat.admin_rights:
                         if full_chat.admin_rights.add_admins:
+                            # Group details fetch karna
                             group_creation_date = full_chat.date
                             formatted_date = group_creation_date.strftime('%Y/%m/%d')
                             group_id = full_chat.id
@@ -140,7 +141,7 @@ async def check_groups(message):
 - Member Count: {members_count}
 - Creation Date: {formatted_date}
 - Group Link: {invite_link.link}
-- Bot Programmer: @deityEmperor
                             """, disable_web_page_preview=True)
-            except Exception as e:
-                print(f"Error processing dialog: {e}")
+        except Exception as e:
+            print(f"Error during check: {e}")
+            bot.reply_to(message, "Error occurred while checking groups. Please try again.")
