@@ -111,27 +111,29 @@ async def check_groups(message):
                 raise Exception("Session expired ❌")
         except (SessionPasswordNeededError, PhoneCodeInvalidError, UserDeactivatedBanError):
             bot.reply_to(message, "Session expired ❌")
+            return
         except Exception:
             bot.reply_to(message, "Session expired ❌")
+            return
     else:
         bot.reply_to(message, "No session added!")
         return 
 
-    async for dialog in client.iter_dialogs(ignore_migrated=True):
-        try:
-            if dialog.is_group:
-                full_chat = await client.get_entity(dialog)
-                if hasattr(full_chat, 'admin_rights') and full_chat.admin_rights:
-                    # Checking if the user has permission to manage admins, implying ownership
-                    if full_chat.admin_rights.add_admins:
-                        group_creation_date = full_chat.date
-                        formatted_date = group_creation_date.strftime('%Y/%m/%d')
-                        group_id = full_chat.id
-                        group_name = full_chat.title
-                        group_username = full_chat.username if full_chat.username else "None"
-                        invite_link = await client(ExportChatInviteRequest(group_id))
-                        members_count = (await client.get_participants(full_chat)).total
-                        bot.reply_to(message, f"""
+    async with client:  # Ensures client disconnects automatically
+        async for dialog in client.iter_dialogs(ignore_migrated=True):
+            try:
+                if dialog.is_group:
+                    full_chat = await client.get_entity(dialog)
+                    if hasattr(full_chat, 'admin_rights') and full_chat.admin_rights:
+                        if full_chat.admin_rights.add_admins:
+                            group_creation_date = full_chat.date
+                            formatted_date = group_creation_date.strftime('%Y/%m/%d')
+                            group_id = full_chat.id
+                            group_name = full_chat.title
+                            group_username = full_chat.username if full_chat.username else "None"
+                            invite_link = await client(ExportChatInviteRequest(group_id))
+                            members_count = (await client.get_participants(full_chat)).total
+                            bot.reply_to(message, f"""
 - Group Name: {group_name}
 - Group Username: @{group_username}
 - Group ID: {group_id}
@@ -139,6 +141,6 @@ async def check_groups(message):
 - Creation Date: {formatted_date}
 - Group Link: {invite_link.link}
 - Bot Programmer: @deityEmperor
-                        """, disable_web_page_preview=True)
-        except Exception as e:
-            print(e)
+                            """, disable_web_page_preview=True)
+            except Exception as e:
+                print(f"Error processing dialog: {e}")
