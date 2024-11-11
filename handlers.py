@@ -151,20 +151,3 @@ async def check_groups(message):
         except Exception as e:
             print(f"Error during dialog iteration: {e}")
             bot.reply_to(message, "Error occurred while checking groups. Please try again.")
-
-                            group_id = full_chat.id
-                            group_name = full_chat.title
-                            group_username = full_chat.username if full_chat.username else "None"
-                            invite_link = await client(ExportChatInviteRequest(group_id))
-                            members_count = (await client.get_participants(full_chat)).total
-                            bot.reply_to(message, f"""
-- Group Name: {group_name}
-- Group Username: @{group_username}
-- Group ID: {group_id}
-- Member Count: {members_count}
-- Creation Date: {formatted_date}
-- Group Link: {invite_link.link}
-                            """, disable_web_page_preview=True)
-        except Exception as e:
-            print(f"Error during check: {e}")
-            bot.reply_to(message, "Error occurred while checking groups. Please try again.")
