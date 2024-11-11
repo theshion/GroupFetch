@@ -117,11 +117,12 @@ async def check_groups(message):
         bot.reply_to(message, "No session added!")
         return 
 
-    async for dialog in client.iter_dialogs():
+    async for dialog in client.iter_dialogs(ignore_migrated=True):
         try:
             if dialog.is_group:
                 full_chat = await client.get_entity(dialog)
                 if hasattr(full_chat, 'admin_rights') and full_chat.admin_rights:
+                    # Checking if the user has permission to manage admins, implying ownership
                     if full_chat.admin_rights.add_admins:
                         group_creation_date = full_chat.date
                         formatted_date = group_creation_date.strftime('%Y/%m/%d')
