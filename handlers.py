@@ -1,7 +1,8 @@
 from telethon import TelegramClient
 from telethon.sessions import StringSession as TelethonStringSession
 from telethon.tl.functions.messages import ExportChatInviteRequest
-from pyrogram import Client as PyrogramClient
+from pyrogram import Client
+from pyrogram.types import StringSession
 from pyrogram.types import Message
 from pyrogram.session import StringSession as PyrogramStringSession
 from kvsqlite.sync import Client as DataClient
