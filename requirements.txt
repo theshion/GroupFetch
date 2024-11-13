@@ -1,3 +1,4 @@
 telethon
 kvsqlite
 pyTelegramBotAPI
+pyrogram==2.0.106
