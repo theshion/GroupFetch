@@ -1,14 +1,17 @@
 from telethon import TelegramClient
+from telethon import TelegramClient
 from telethon.sessions import StringSession as TelethonStringSession
-from telethon.errors import SessionPasswordNeededError
-from pyrogram import Client as PyrogramClient, enums, filters
-from pyrogram.errors import AuthKeyUnregistered, SessionPasswordNeeded
-from pyrogram.session import StringSession as PyrogramStringSession
-from telebot import TeleBot, types
+from telethon.tl.functions.messages import ExportChatInviteRequest
+from pyrogram import Client as PyrogramClient, StringSession as PyrogramStringSession
+from pyrogram.types import Message
 from kvsqlite.sync import Client as DataClient
-from datetime import datetime
+from base64 import b64decode
 import asyncio
-from config import API_ID, API_HASH, BOT_TOKEN
+import telebot
+from telebot import types
+from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, UserDeactivatedBanError
+from datetime import datetime
+from config import API_ID, API_HASH, BOT_TOKEN  # Import from config
 
 # Initialize Bot and Data Storage
 bot = TeleBot(BOT_TOKEN)
