@@ -1,5 +1,5 @@
-from pyrogram import Client, enums, filters
-from pyrogram.errors import AuthKeyUnregistered, SessionPasswordNeeded
+from pyrogram import Client
+from pyrogram import StringSession
 from telethon import TelegramClient
 from telethon.sessions import StringSession as TelethonStringSession
 from pyrogram.session import StringSession as PyrogramStringSession
