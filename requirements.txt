@@ -1,4 +1,5 @@
-telethon
+pyrogram==2.0.106
+telethon==1.37.0
 kvsqlite
 pyTelegramBotAPI
-pyrogram
+
