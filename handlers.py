@@ -1,143 +1,91 @@
-from telethon import TelegramClient
-from telethon.sessions import StringSession
-from telethon.tl.functions.messages import ExportChatInviteRequest
-from kvsqlite.sync import Client
-from base64 import b64decode
-import asyncio
-import telebot
-from telebot import types
-from telethon.errors import SessionPasswordNeededError, PhoneCodeInvalidError, UserDeactivatedBanError
+from pyrogram import Client, filters, enums
+from pyrogram.types import ReplyKeyboardMarkup, Message
+from pyrogram.errors import SessionPasswordNeeded, AuthKeyUnregistered, ChatAdminRequired
+from kvsqlite.sync import Client as Database
 from datetime import datetime
-from config import API_ID, API_HASH, BOT_TOKEN  # Import from config
+from config import API_ID, API_HASH, BOT_TOKEN
 
-data = Client("session_data.bot")
-bot = telebot.TeleBot(BOT_TOKEN)
+# Initialize bot
+bot = Client("bot_session", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-sessions = {}
-check_with_sessions = {}
+# Database for storing sessions
+data = Database("session_data.bot")
 
+# Full reply buttons
 def create_buttons():
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    start_check = types.KeyboardButton("Start Check")
-    add_session = types.KeyboardButton("Add Session")
-    show_sessions = types.KeyboardButton("Show Sessions")
-    show_time = types.KeyboardButton("Current Time")
-    programmer = types.KeyboardButton("Programmer")
-    programmer_channel = types.KeyboardButton("Programmer's Channel")
-    bot_info = types.KeyboardButton("Bot Info")
-    markup.add(start_check)
-    markup.add(add_session, show_sessions, show_time)
-    markup.add(bot_info)
-    markup.add(programmer, programmer_channel)
-    return markup
+    return ReplyKeyboardMarkup(
+        [["Start Check", "Add Session", "Show Sessions"],
+         ["Current Time", "Bot Info", "Programmer"],
+         ["Programmer's Channel"]],
+        resize_keyboard=True
+    )
 
-@bot.message_handler(commands=['start'])
-def start_message(message):
-    bot.send_video(
-        message.chat.id,
+@bot.on_message(filters.command("start"))
+async def start(client, message: Message):
+    await message.reply_video(
         "https://t.me/yyyyyy3w/31",
         caption="""
 Welcome to the bot for retrieving *your deleted groups*. Send commands now.
 Bot programmer: [Sofi](t.me/M02MM)
         """,
-        parse_mode="Markdown",
+        parse_mode=enums.ParseMode.MARKDOWN,
         reply_markup=create_buttons()
     )
 
-@bot.message_handler(func=lambda message: True)
-def handle_all_messages(message):
-    text = message.text
+@bot.on_message(filters.text & ~filters.command(["start"]))
+async def handle_text(client, message: Message):
     user_id = message.from_user.id
+    text = message.text
 
     if text == "Start Check":
-        asyncio.run(check_groups(message))
-    elif text == "Programmer":
-        bot.reply_to(message, "- Bot Programmer: [Sofi](t.me/M02MM)", parse_mode="Markdown", disable_web_page_preview=True)
-    elif text == "Programmer's Channel":
-        bot.reply_to(message, "- Programmer's Channel: [Python Tools](t.me/uiujq)", parse_mode="Markdown", disable_web_page_preview=True)
-    elif text == "Bot Info":
-        bot.reply_to(message, "The bot is simple, no extra info needed. Enjoy!")
+        await message.reply("Checking your groups...")
+        await check_groups(client, user_id, message)
     elif text == "Add Session":
-        bot.reply_to(message, "Send the *Telethon* session now", parse_mode="Markdown")
-        sessions[user_id] = "add"
+        await message.reply("Please send your session string.")
+        data.set(f"session_status_{user_id}", "waiting")
     elif text == "Show Sessions":
-        saved_session = data.get(f"session_{user_id}")
-        if saved_session:
-            bot.reply_to(message, saved_session)
-        else:
-            bot.reply_to(message, "No session added!")
-    elif user_id in sessions and sessions[user_id] == "add":
-        session_data = message.text
-        try:
-            asyncio.run(check_session(message, user_id, session_data))
-        except Exception:
-            bot.reply_to(message, "Session expired ❌")
-        del sessions[user_id]
+        session_string = data.get(f"session_{user_id}")
+        await message.reply(f"Your session: {session_string if session_string else 'No session saved.'}")
+    elif text == "Programmer":
+        await message.reply("- Bot Programmer: [Sofi](t.me/M02MM)", parse_mode=enums.ParseMode.MARKDOWN)
+    elif text == "Programmer's Channel":
+        await message.reply("- Programmer's Channel: [Python Tools](t.me/uiujq)", parse_mode=enums.ParseMode.MARKDOWN)
+    elif text == "Bot Info":
+        await message.reply("This bot retrieves your group data and simplifies access.")
+    elif data.get(f"session_status_{user_id}") == "waiting":
+        await verify_session(user_id, text, message)
+        data.delete(f"session_status_{user_id}")
     elif text == "Current Time":
-        current_time = datetime.now().strftime("%I:%M:%S")
-        bot.reply_to(message, f"*- Current time is:* `{current_time}`", parse_mode="Markdown")
-
-async def check_session(message, user_id, session_data):
-    try:
-        client = TelegramClient(StringSession(session_data), API_ID, API_HASH)
-        await client.connect()
-        if not await client.is_user_authorized():
-            raise Exception("Session expired ❌")
-        data.set(f"session_{user_id}", session_data)
-        await client.send_message("me", "*Welcome! You are logged in. Please wait for the check to complete.*\nBot programmer: @M02MM")
-        bot.reply_to(message, "Session saved ✅")
-        check_with_sessions[user_id] = session_data
-        await client.disconnect()
-
-    except (SessionPasswordNeededError, PhoneCodeInvalidError, UserDeactivatedBanError):
-        bot.reply_to(message, "Session expired ❌")
-    except Exception:
-        bot.reply_to(message, "Session expired ❌")
-
-async def check_groups(message):
-    user_id = message.from_user.id
-    try:
-        session_data = check_with_sessions[user_id]
-    except KeyError:
-        bot.reply_to(message, "No session added!")
-        return
-    
-    if session_data:
-        bot.reply_to(message, "Checking...")
-        try:
-            client = TelegramClient(StringSession(session_data), API_ID, API_HASH)
-            await client.connect()
-            if not await client.is_user_authorized():
-                raise Exception("Session expired ❌")
-        except (SessionPasswordNeededError, PhoneCodeInvalidError, UserDeactivatedBanError):
-            bot.reply_to(message, "Session expired ❌")
-        except Exception:
-            bot.reply_to(message, "Session expired ❌")
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        await message.reply(f"Current time: {current_time}")
     else:
-        bot.reply_to(message, "No session added!")
-        return 
+        await message.reply("Invalid choice! Use the buttons or send `/start`.")
 
-    async for dialog in client.iter_dialogs():
-        try:
-            if dialog.is_group:
-                full_chat = await client.get_entity(dialog)
-                if hasattr(full_chat, 'admin_rights') and full_chat.admin_rights:
-                    if full_chat.admin_rights.add_admins:
-                        group_creation_date = full_chat.date
-                        formatted_date = group_creation_date.strftime('%Y/%m/%d')
-                        group_id = full_chat.id
-                        group_name = full_chat.title
-                        group_username = full_chat.username if full_chat.username else "None"
-                        invite_link = await client(ExportChatInviteRequest(group_id))
-                        members_count = (await client.get_participants(full_chat)).total
-                        bot.reply_to(message, f"""
-- Group Name: {group_name}
-- Group Username: @{group_username}
-- Group ID: {group_id}
-- Member Count: {members_count}
-- Creation Date: {formatted_date}
-- Group Link: {invite_link.link}
-- Bot Programmer: @M02MM
-                        """, disable_web_page_preview=True)
-        except Exception as e:
-            print(e)
+async def verify_session(user_id, session_string, message):
+    try:
+        user_client = Client("session_check", session_string=session_string, api_id=API_ID, api_hash=API_HASH)
+        await user_client.start()
+        user_info = await user_client.get_me()
+        data.set(f"session_{user_id}", session_string)
+        await message.reply(f"Session saved! Welcome, {user_info.first_name}.")
+        await user_client.stop()
+    except (AuthKeyUnregistered, SessionPasswordNeeded):
+        await message.reply("Invalid session or expired session!")
+
+async def check_groups(client, user_id, message):
+    session_string = data.get(f"session_{user_id}")
+    if not session_string:
+        await message.reply("No valid session found. Please add your session.")
+        return
+
+    try:
+        user_client = Client("group_check", session_string=session_string, api_id=API_ID, api_hash=API_HASH)
+        await user_client.start()
+        async for dialog in user_client.get_dialogs():
+            if dialog.chat.type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP] and dialog.chat.is_creator:
+                await message.reply(f"Group: {dialog.chat.title}")
+        await user_client.stop()
+    except Exception as e:
+        await message.reply(f"Error checking groups: {e}")
+
+bot.run()
